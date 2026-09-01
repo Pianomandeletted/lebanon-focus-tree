@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+/* The signature backdrop: a slow, quiet gradient drift behind the tree -
+   never the loudest thing on screen, just enough motion to feel alive. */
+.national-gradient {
+  background:
+    radial-gradient(1200px 800px at 15% 10%, rgba(163, 38, 56, 0.14), transparent 60%),
+    radial-gradient(1000px 700px at 85% 25%, rgba(201, 162, 75, 0.10), transparent 55%),
+    radial-gradient(1400px 900px at 50% 100%, rgba(31, 68, 96, 0.35), transparent 60%),
+    linear-gradient(160deg, #070c12 0%, #0b1420 45%, #0f2436 100%);
+  background-size: 160% 160%, 160% 160%, 160% 160%, 100% 100%;
+  animation: gradient-drift 32s ease-in-out infinite;
+}
+
+@keyframes gradient-drift {
+  0% { background-position: 0% 0%, 100% 0%, 50% 100%, 0 0; }
+  50% { background-position: 20% 15%, 80% 20%, 55% 90%, 0 0; }
+  100% { background-position: 0% 0%, 100% 0%, 50% 100%, 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .national-gradient { animation: none; }
+}
+
+.focus-canvas-grid {
+  background-image: radial-gradient(rgba(232, 237, 242, 0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #1f4460; border-radius: 8px; }

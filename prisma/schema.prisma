@@ -1,0 +1,138 @@
+// Data model for the Roblox Lebanon focus-tree site.
+// Everything the admin panel manages lives here - nothing is hardcoded
+// into the frontend, so new paths/focuses/stats/tracks can be added
+// without a rebuild.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum FocusStatus {
+  COMPLETE
+  COMPLETING
+  INCOMPLETE
+  IMPOSSIBLE
+}
+
+// A named branch of the tree: a faction/political path, a diplomacy
+// country branch, or one of the extra national-development categories.
+// "parentPathId" lets a path nest under another (e.g. Chamounist Path
+// nests under National Liberal Party; country branches nest under
+// the Diplomacy category path).
+model Path {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String   @default("")
+  color       String   @default("#C9A24B") // accent color for this branch's nodes/lines
+  category    String   // "faction" | "diplomacy" | "national"
+  order       Int      @default(0)
+  isPublished Boolean  @default(true)
+
+  parentPathId String?
+  parentPath    Path?   @relation("PathHierarchy", fields: [parentPathId], references: [id])
+  childPaths    Path[]  @relation("PathHierarchy")
+
+  focuses Focus[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Focus {
+  id           String      @id @default(cuid())
+  slug         String      @unique
+  title        String
+  description  String      @default("")
+  status       FocusStatus @default(INCOMPLETE)
+  iconUrl      String?
+  x            Float       @default(0) // canvas position
+  y            Float       @default(0)
+  order        Int         @default(0)
+  isPublished  Boolean     @default(true)
+
+  pathId String
+  path   Path   @relation(fields: [pathId], references: [id], onDelete: Cascade)
+
+  // requirements shown as free text bullets in the detail panel
+  // (e.g. "Control of South Lebanon", "Political Power >= 150")
+  requirements String[] @default([])
+
+  // completion effects / flavor text shown once a focus completes
+  completionText String @default("")
+
+  prerequisitesOf FocusConnection[] @relation("ToFocus")
+  prerequisiteFor FocusConnection[] @relation("FromFocus")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([pathId])
+}
+
+// Directed edge: fromFocus is a prerequisite of toFocus.
+// Modeling connections as their own rows (rather than an array of ids
+// on Focus) is what lets branches merge - a focus can have many
+// incoming edges from different paths.
+model FocusConnection {
+  id String @id @default(cuid())
+
+  fromFocusId String
+  fromFocus   Focus @relation("FromFocus", fields: [fromFocusId], references: [id], onDelete: Cascade)
+
+  toFocusId String
+  toFocus   Focus @relation("ToFocus", fields: [toFocusId], references: [id], onDelete: Cascade)
+
+  @@unique([fromFocusId, toFocusId])
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String   // bcrypt hash - only ever set server-side, never from client input
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+}
+
+model Statistic {
+  id          String @id @default(cuid())
+  key         String @unique // "population" | "gdp" | "military_strength" | ...
+  label       String
+  value       Float
+  maxValue    Float? // if set, rendered as a progress bar against this max
+  unit        String @default("")
+  description String @default("")
+  order       Int    @default(0)
+
+  updatedAt DateTime @updatedAt
+}
+
+model MusicTrack {
+  id        String  @id @default(cuid())
+  title     String
+  artist    String  @default("")
+  url       String
+  order     Int     @default(0)
+  isEnabled Boolean @default(true)
+
+  createdAt DateTime @default(now())
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  body      String
+  isPinned  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
